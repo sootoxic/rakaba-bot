@@ -1,15 +1,14 @@
-
 {
-  "name": "discord-attendance-bot",
+  "name": "rakaba-bot",
   "version": "1.0.0",
-  "description": "Bot to track attendance sessions",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "^14.11.0",
-    "dotenv": "^16.0.3",
-    "mongoose": "^7.3.1"
+    "discord.js": "^14.13.0",
+    "dotenv": "^16.4.1",
+    "mongoose": "^8.3.1"
   }
 }
