@@ -104,8 +104,7 @@ client.on('interactionCreate', async interaction => {
       const row = new ActionRowBuilder().addComponents(menu);
       await interaction.reply({
         content: '📍 اختر المكان الذي تريد تسجيل الدخول إليه:',
-        components: [row],
-        ephemeral: false
+        components: [row]
       });
     }
 
@@ -191,6 +190,8 @@ ${activeUsers.join('\n')}`, ephemeral: true });
     const logChannel = await interaction.guild.channels.fetch("1382950319039461456");
     if (!logChannel?.isTextBased()) return;
 
+    await interaction.deferUpdate();
+
     if (action === 'approve') {
       await Session.findOneAndUpdate(
         { userId },
@@ -198,13 +199,11 @@ ${activeUsers.join('\n')}`, ephemeral: true });
         { upsert: true, new: true }
       );
 
-      await interaction.reply({ content: `✅ تم قبول دخول <@${userId}> إلى **${type}**.`, ephemeral: true });
-      await interaction.message.edit({ components: [] });
+      await interaction.message.edit({ content: `✅ تم قبول دخول <@${userId}> إلى **${type}**.`, components: [] });
       await logChannel.send(`☑️ تم قبول دخول <@${userId}> إلى **${type}**.`);
 
     } else if (action === 'reject') {
-      await interaction.reply({ content: `❌ تم رفض دخول <@${userId}> إلى **${type}**.`, ephemeral: true });
-      await interaction.message.edit({ components: [] });
+      await interaction.message.edit({ content: `❌ تم رفض دخول <@${userId}> إلى **${type}**.`, components: [] });
       await logChannel.send(`🚫 تم رفض دخول <@${userId}> إلى **${type}**. يرجى التواصل مع المشرف.`);
     }
   }
