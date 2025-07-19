@@ -86,11 +86,11 @@ client.on('interactionCreate', async interaction => {
     const isLimitedAccess = allAllowedRoles.some(roleId => member.roles.cache.has(roleId));
 
     if (!isLimitedAccess) {
-      return interaction.reply({ content: '🚫 ليس لديك الصلاحية لاستخدام هذا الأمر.', ephemeral: true });
+      return interaction.reply({ content: '🚫 ليس لديك الصلاحية لاستخدام هذا الأمر.', flags: 64 });
     }
 
     if (interaction.commandName === 'jard') {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: 64 });
 
       const from = interaction.options.getString('من');
       const to = interaction.options.getString('إلى');
@@ -129,6 +129,69 @@ ${reportLines.join('\n')}`
       }
 
       await interaction.editReply({ content: '✅ تم إرسال تقرير الجرد في القناة المخصصة.' });
+    }
+
+    if (interaction.commandName === 'دخول') {
+      await interaction.deferReply({ flags: 64 });
+
+      const existing = await Session.findOne({ userId: interaction.user.id });
+      const hasActive = existing && existing.sessions.some(s => !s.end);
+      if (hasActive) {
+        return interaction.editReply({ content: '⚠️ لا يمكنك تسجيل دخول جديد قبل تسجيل الخروج من الجلسة الحالية.' });
+      }
+
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId(`select_place_${interaction.user.id}`)
+        .setPlaceholder('اختر موقع الدخول')
+        .addOptions(PLACES.map(p => ({ label: p, value: p })));
+
+      const row = new ActionRowBuilder().addComponents(menu);
+      await interaction.editReply({
+        content: '📍 اختر المكان الذي تريد تسجيل الدخول إليه:',
+        components: [row]
+      });
+    }
+
+    if (interaction.commandName === 'خروج') {
+      await interaction.deferReply({ flags: 64 });
+
+      const existing = await Session.findOne({ userId: interaction.user.id });
+      if (!existing || !existing.sessions.length) {
+        return interaction.editReply({ content: '⚠️ لا توجد جلسات حالية.' });
+      }
+      const active = [...existing.sessions].reverse().find(s => !s.end);
+      if (!active) {
+        return interaction.editReply({ content: '⚠️ لا توجد جلسة مفتوحة.' });
+      }
+      const type = active.type || 'غير معروف';
+      active.end = new Date();
+      active.duration = ((active.end - active.start) / 1000 / 60 / 60);
+      await existing.save();
+      await interaction.editReply({ content: `✅ تم تسجيل الخروج من **${type}**.` });
+    }
+
+    if (interaction.commandName === 'عرض') {
+      await interaction.deferReply({ flags: 64 });
+
+      if (!isFullAccess) {
+        return interaction.editReply({ content: '🚫 هذا الأمر مخصص للمسؤول فقط.' });
+      }
+
+      const activeSessions = await Session.find({});
+      const activeUsers = activeSessions
+        .map(user => {
+          const active = [...user.sessions].reverse().find(s => !s.end);
+          if (active) return `• <@${user.userId}> - **${active.type}**`;
+        })
+        .filter(Boolean);
+
+      if (!activeUsers.length) {
+        return interaction.editReply({ content: '🔍 لا يوجد أي شخص مسجل دخول حاليًا.' });
+      }
+
+      return interaction.editReply({ content: `📋 المسجلين دخول حاليًا:
+
+${activeUsers.join('\n')}` });
     }
   }
 });
