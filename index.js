@@ -93,7 +93,16 @@ client.on('interactionCreate', async interaction => {
         .addOptions(PLACES.map(place => ({ label: place, value: place })));
 
       const row = new ActionRowBuilder().addComponents(menu);
-      await interaction.reply({ content: '📍 اختر المكان الذي تريد تسجيل الدخول إليه:', components: [row], ephemeral: true });
+      const reply = await interaction.reply({
+  content: '📍 اختر المكان الذي تريد تسجيل الدخول إليه:',
+  components: [row],
+  ephemeral: false,
+  fetchReply: true
+});
+
+setTimeout(() => {
+  reply.delete().catch(() => {});
+}, 15000);
     }
 
     if (interaction.commandName === 'خروج') {
@@ -105,7 +114,10 @@ client.on('interactionCreate', async interaction => {
       active.end = new Date();
       active.duration = ((active.end - active.start) / 1000 / 60 / 60);
       await existing.save();
-      return interaction.reply({ content: `✅ تم تسجيل الخروج من **${type}**.`, ephemeral: true });
+      const reply = await interaction.reply({ content: `✅ تم تسجيل الخروج من **${type}**.`, fetchReply: true });
+setTimeout(() => {
+  reply.delete().catch(() => {});
+}, 10000);
     }
   }
 
@@ -139,12 +151,15 @@ client.on('interactionCreate', async interaction => {
       if (!existing) existing = new Session({ userId, username: user.user.username, sessions: [] });
       existing.sessions.push({ start: new Date(), end: null, duration: null, type: place });
       await existing.save();
-      await interaction.reply({ content: `✅ تم قبول دخول <@${userId}> إلى **${place}**` });
+      const reply = await interaction.reply({ content: `✅ تم قبول دخول <@${userId}> إلى **${place}**` });
+setTimeout(() => {
+  reply.delete().catch(() => {});
+}, 10000);
       const logChannel = interaction.guild.channels.cache.get(interaction.channelId);
       await logChannel.send(`✅ تم تسجيل دخول <@${userId}> إلى **${place}** بعد موافقة الرقابة.`);
     } else if (action === 'reject') {
       await interaction.reply({ content: `❌ تم رفض دخول <@${userId}> إلى **${place}**.` });
-      await user.send(`❌ تم رفض دخولك إلى **${place}**. يرجى مراجعة الرقابة.`);
+      user.send(`❌ تم رفض دخولك إلى **${place}**. يرجى مراجعة الرقابة.`).catch(() => {});
     }
   }
 });
