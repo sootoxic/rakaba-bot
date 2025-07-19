@@ -1,8 +1,11 @@
-const { Client, GatewayIntentBits, Routes, Partials, AttachmentBuilder, SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, InteractionType } = require('discord.js');
-const { REST } = require('@discordjs/rest');
-const mongoose = require('mongoose');
-require('dotenv').config();
-const fs = require('fs');
+import { Client, GatewayIntentBits, Routes, Partials, AttachmentBuilder, SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, InteractionType } from 'discord.js';
+import { REST } from '@discordjs/rest';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import fs from 'fs';
+
+dotenv.config();
+
 
 mongoose.connect(process.env.MONGO_URI);
 
@@ -184,3 +187,4 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(process.env.BOT_TOKEN);
+
