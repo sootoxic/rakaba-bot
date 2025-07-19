@@ -108,7 +108,18 @@ client.on('interactionCreate', async interaction => {
 
       for (const user of allSessions) {
         const filteredSessions = user.sessions.filter(s => s.start >= fromDate && s.start <= toDate);
-        const totalHours = filteredSessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+        const totalHours = filteredSessions.reduce((sum, s) => {
+          const duration = s.duration;
+          if (duration && !isNaN(duration)) return sum + duration;
+        
+          if (s.start && s.end) {
+            const d = ((new Date(s.end) - new Date(s.start)) / 1000 / 60 / 60);
+            return sum + d;
+          }
+        
+          return sum;
+        }, 0);
+        
 
         if (totalHours > 0) {
           reportLines.push(`• <@${user.userId}> ⏱️ ${totalHours.toFixed(1)} ساعة`);
