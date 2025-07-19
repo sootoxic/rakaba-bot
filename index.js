@@ -198,19 +198,13 @@ ${activeUsers.join('\n')}`, ephemeral: true });
         { upsert: true, new: true }
       );
 
-      await interaction.update({
-        content: `✅ تم قبول دخول <@${userId}> إلى **${type}**.`,
-        components: []
-      });
-
+      await interaction.reply({ content: `✅ تم قبول دخول <@${userId}> إلى **${type}**.`, ephemeral: true });
+      await interaction.message.edit({ components: [] });
       await logChannel.send(`☑️ تم قبول دخول <@${userId}> إلى **${type}**.`);
 
     } else if (action === 'reject') {
-      await interaction.update({
-        content: `❌ تم رفض دخول <@${userId}> إلى **${type}**.`,
-        components: []
-      });
-
+      await interaction.reply({ content: `❌ تم رفض دخول <@${userId}> إلى **${type}**.`, ephemeral: true });
+      await interaction.message.edit({ components: [] });
       await logChannel.send(`🚫 تم رفض دخول <@${userId}> إلى **${type}**. يرجى التواصل مع المشرف.`);
     }
   }
