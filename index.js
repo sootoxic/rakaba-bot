@@ -58,13 +58,11 @@ client.once('ready', () => {
 
     new SlashCommandBuilder()
       .setName('دخول')
-      .setDescription('🟢 بدء تسجيل دخول')
-      .toJSON(),
+      .setDescription('🟢 بدء تسجيل دخول'),
 
     new SlashCommandBuilder()
       .setName('خروج')
       .setDescription('🔴 تسجيل الخروج من الجلسة الحالية')
-      .toJSON()
   ];
 
   const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
@@ -90,19 +88,40 @@ client.on('interactionCreate', async interaction => {
       const menu = new StringSelectMenuBuilder()
         .setCustomId(`select_place_${interaction.user.id}`)
         .setPlaceholder('اختر موقع الدخول')
-        .addOptions(PLACES.map(place => ({ label: place, value: place })));
+        .addOptions([
+          {
+            label: 'ملكية + السجن',
+            value: 'ملكية + السجن'
+          },
+          {
+            label: 'السجن الاداري',
+            value: 'السجن الاداري'
+          },
+          {
+            label: 'الرسبون',
+            value: 'الرسبون'
+          },
+          {
+            label: 'شيبمنت',
+            value: 'شيبمنت'
+          },
+          {
+            label: 'مركز الامن العام',
+            value: 'مركز الامن العام'
+          }
+        ]);
 
       const row = new ActionRowBuilder().addComponents(menu);
       const reply = await interaction.reply({
-  content: '📍 اختر المكان الذي تريد تسجيل الدخول إليه:',
-  components: [row],
-  ephemeral: false,
-  fetchReply: true
-});
+        content: '📍 اختر المكان الذي تريد تسجيل الدخول إليه:',
+        components: [row],
+        ephemeral: false,
+        fetchReply: true
+      });
 
-setTimeout(() => {
-  reply.delete().catch(() => {});
-}, 15000);
+      setTimeout(() => {
+        reply.delete().catch(() => {});
+      }, 15000);
     }
 
     if (interaction.commandName === 'خروج') {
@@ -115,9 +134,9 @@ setTimeout(() => {
       active.duration = ((active.end - active.start) / 1000 / 60 / 60);
       await existing.save();
       const reply = await interaction.reply({ content: `✅ تم تسجيل الخروج من **${type}**.`, fetchReply: true });
-setTimeout(() => {
-  reply.delete().catch(() => {});
-}, 10000);
+      setTimeout(() => {
+        reply.delete().catch(() => {});
+      }, 10000);
     }
   }
 
@@ -152,9 +171,9 @@ setTimeout(() => {
       existing.sessions.push({ start: new Date(), end: null, duration: null, type: place });
       await existing.save();
       const reply = await interaction.reply({ content: `✅ تم قبول دخول <@${userId}> إلى **${place}**` });
-setTimeout(() => {
-  reply.delete().catch(() => {});
-}, 10000);
+      setTimeout(() => {
+        reply.delete().catch(() => {});
+      }, 10000);
       const logChannel = interaction.guild.channels.cache.get(interaction.channelId);
       await logChannel.send(`✅ تم تسجيل دخول <@${userId}> إلى **${place}** بعد موافقة الرقابة.`);
     } else if (action === 'reject') {
