@@ -187,36 +187,33 @@ ${activeUsers.join('\n')}`, ephemeral: true });
     const [action, userId, type] = interaction.customId.split('_');
     const targetUser = await interaction.guild.members.fetch(userId).catch(() => null);
     if (!targetUser) return;
-  
+
     const logChannel = await interaction.guild.channels.fetch("1382950319039461456");
     if (!logChannel?.isTextBased()) return;
-  
+
     if (action === 'approve') {
       await Session.findOneAndUpdate(
         { userId },
         { $push: { sessions: { start: new Date(), type } }, username: targetUser.user.username },
         { upsert: true, new: true }
       );
-  
-      // تعديل الرسالة الأصلية لحذف الأزرار بعد الموافقة
-      await interaction.message.edit({
+
+      await interaction.update({
         content: `✅ تم قبول دخول <@${userId}> إلى **${type}**.`,
         components: []
       });
-  
-      // إرسال إشعار في قناة اللوغ
+
       await logChannel.send(`☑️ تم قبول دخول <@${userId}> إلى **${type}**.`);
-  
+
     } else if (action === 'reject') {
-      await interaction.message.edit({
+      await interaction.update({
         content: `❌ تم رفض دخول <@${userId}> إلى **${type}**.`,
         components: []
       });
-  
+
       await logChannel.send(`🚫 تم رفض دخول <@${userId}> إلى **${type}**. يرجى التواصل مع المشرف.`);
     }
   }
-  
 });
 
 client.login(process.env.BOT_TOKEN);
