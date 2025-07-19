@@ -166,6 +166,14 @@ ${activeUsers.join('\n')}`, ephemeral: true });
       await requestChannel.send({
         content: `🔔 طلب دخول جديد من <@${userId}> للموقع **${selected}**. الرجاء مراجعة الطلب في: <#1379000717230215179>`
       });
+
+      const dmTarget = interaction.guild.members.cache.find(m => m.roles.cache.has("1379000098989801482"));
+      if (dmTarget) {
+        dmTarget.send({
+          content: `📥 طلب دخول جديد من <@${userId}> للموقع **${selected}**. الرجاء مراجعة الطلب في الروم <#1379000717230215179>.`
+        }).catch(() => {});
+      }
+
       await requestChannel.send({
         content: `• العضو: <@${userId}>\n• الموقع: **${selected}**`,
         components: [row]
@@ -181,9 +189,7 @@ ${activeUsers.join('\n')}`, ephemeral: true });
 
       const [action, userId, type] = interaction.customId.split('_');
       const targetUser = await interaction.guild.members.fetch(userId).catch(() => null);
-      if (!targetUser) {
-        return interaction.followUp({ content: `❌ لا يمكن العثور على المستخدم.`, ephemeral: true });
-      }
+      if (!targetUser) return;
 
       const logChannel = await interaction.guild.channels.fetch("1382950319039461456");
       if (!logChannel?.isTextBased()) return;
@@ -195,10 +201,10 @@ ${activeUsers.join('\n')}`, ephemeral: true });
           { upsert: true, new: true }
         );
         await logChannel.send(`✅ تم قبول دخول <@${userId}> إلى **${type}**.`);
-        await interaction.editReply({ content: `☑️ تم القبول وتسجيل الدخول في **${type}**.`, components: [] });
+        await interaction.followUp({ content: `☑️ تم القبول وتسجيل الدخول في **${type}**.`, ephemeral: true });
       } else if (action === 'reject') {
         await logChannel.send(`❌ تم رفض دخول <@${userId}> إلى **${type}**. يرجى التواصل مع المشرف.`);
-        await interaction.editReply({ content: `❌ تم الرفض.`, components: [] });
+        await interaction.followUp({ content: `❌ تم الرفض.`, ephemeral: true });
       }
     } catch (err) {
       console.error("❌ خطأ في زر التفاعل:", err);
