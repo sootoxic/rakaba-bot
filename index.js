@@ -57,8 +57,8 @@ client.once('ready', () => {
     new SlashCommandBuilder()
       .setName('jard')
       .setDescription('📊 احصل على جرد الحضور خلال فترة محددة')
-      .addStringOption(option => option.setName('من').setDescription('تاريخ البداية (YYYY-MM-DD)').setRequired(true))
-      .addStringOption(option => option.setName('إلى').setDescription('تاريخ النهاية (YYYY-MM-DD)').setRequired(true)),
+      .addStringOption(option => option.setName('from').setDescription('تاريخ البداية (YYYY-MM-DD)').setRequired(true))
+      .addStringOption(option => option.setName('to').setDescription('تاريخ النهاية (YYYY-MM-DD)').setRequired(true)),
 
     new SlashCommandBuilder()
       .setName('دخول')
@@ -92,8 +92,8 @@ client.on('interactionCreate', async interaction => {
     if (interaction.commandName === 'jard') {
       await interaction.deferReply({ flags: 64 });
 
-      const from = interaction.options.getString('من');
-      const to = interaction.options.getString('إلى');
+      const from = interaction.options.getString('from');
+      const to = interaction.options.getString('to');
 
       const fromDate = new Date(from);
       const toDate = new Date(to);
@@ -122,9 +122,7 @@ client.on('interactionCreate', async interaction => {
       const targetChannel = await interaction.guild.channels.fetch("1379000568680419338").catch(() => null);
       if (targetChannel?.isTextBased()) {
         await targetChannel.send({
-          content: `🗓️ تقرير الجرد من **${from}** إلى **${to}**:
-
-${reportLines.join('\n')}`
+          content: `🗓️ تقرير الجرد من **${from}** إلى **${to}**:\n\n${reportLines.join('\n')}`
         });
       }
 
@@ -189,9 +187,7 @@ ${reportLines.join('\n')}`
         return interaction.editReply({ content: '🔍 لا يوجد أي شخص مسجل دخول حاليًا.' });
       }
 
-      return interaction.editReply({ content: `📋 المسجلين دخول حاليًا:
-
-${activeUsers.join('\n')}` });
+      return interaction.editReply({ content: `📋 المسجلين دخول حاليًا:\n\n${activeUsers.join('\n')}` });
     }
   }
 });
