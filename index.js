@@ -187,7 +187,7 @@ ${activeUsers.join('\n')}`, ephemeral: true });
     const targetUser = await interaction.guild.members.fetch(userId).catch(() => null);
     if (!targetUser) return;
 
-    const logChannel = await interaction.guild.channels.fetch("1382950319039461456");
+    const logChannel = await interaction.guild.channels.fetch("1379000717230215179");
     if (!logChannel?.isTextBased()) return;
 
     await interaction.deferUpdate();
