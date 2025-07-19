@@ -89,122 +89,46 @@ client.on('interactionCreate', async interaction => {
       return interaction.reply({ content: '🚫 ليس لديك الصلاحية لاستخدام هذا الأمر.', ephemeral: true });
     }
 
-    if (interaction.commandName === 'دخول') {
-      const existing = await Session.findOne({ userId: interaction.user.id });
-      const hasActive = existing && existing.sessions.some(s => !s.end);
-      if (hasActive) {
-        return interaction.reply({ content: '⚠️ لا يمكنك تسجيل دخول جديد قبل تسجيل الخروج من الجلسة الحالية.', ephemeral: true });
+    if (interaction.commandName === 'jard') {
+      await interaction.deferReply({ ephemeral: true });
+
+      const from = interaction.options.getString('من');
+      const to = interaction.options.getString('إلى');
+
+      const fromDate = new Date(from);
+      const toDate = new Date(to);
+      toDate.setHours(23, 59, 59, 999);
+
+      if (isNaN(fromDate) || isNaN(toDate)) {
+        return interaction.editReply({ content: '❌ تواريخ غير صحيحة. تأكد من التنسيق (YYYY-MM-DD).' });
       }
 
-      const menu = new StringSelectMenuBuilder()
-        .setCustomId(`select_place_${interaction.user.id}`)
-        .setPlaceholder('اختر موقع الدخول')
-        .addOptions(PLACES.map(p => ({ label: p, value: p })));
+      const allSessions = await Session.find({});
+      const reportLines = [];
 
-      const row = new ActionRowBuilder().addComponents(menu);
-      await interaction.reply({
-        content: '📍 اختر المكان الذي تريد تسجيل الدخول إليه:',
-        components: [row]
-      });
-    }
+      for (const user of allSessions) {
+        const filteredSessions = user.sessions.filter(s => s.start >= fromDate && s.start <= toDate);
+        const totalHours = filteredSessions.reduce((sum, s) => sum + (s.duration || 0), 0);
 
-    if (interaction.commandName === 'خروج') {
-      const existing = await Session.findOne({ userId: interaction.user.id });
-      if (!existing || !existing.sessions.length) return interaction.reply({ content: '⚠️ لا توجد جلسات حالية.', ephemeral: true });
-      const active = [...existing.sessions].reverse().find(s => !s.end);
-      if (!active) return interaction.reply({ content: '⚠️ لا توجد جلسة مفتوحة.', ephemeral: true });
-      const type = active.type || 'غير معروف';
-      active.end = new Date();
-      active.duration = ((active.end - active.start) / 1000 / 60 / 60);
-      await existing.save();
-      await interaction.reply({ content: `✅ تم تسجيل الخروج من **${type}**.` });
-    }
-
-    if (interaction.commandName === 'عرض') {
-      if (!isFullAccess) {
-        return interaction.reply({ content: '🚫 هذا الأمر مخصص للمسؤول فقط.', ephemeral: true });
+        if (totalHours > 0) {
+          reportLines.push(`• <@${user.userId}> ⏱️ ${totalHours.toFixed(1)} ساعة`);
+        }
       }
 
-      const activeSessions = await Session.find({});
-      const activeUsers = activeSessions
-        .map(user => {
-          const active = [...user.sessions].reverse().find(s => !s.end);
-          if (active) return `• <@${user.userId}> - **${active.type}**`;
-        })
-        .filter(Boolean);
-
-      if (!activeUsers.length) {
-        return interaction.reply({ content: '🔍 لا يوجد أي شخص مسجل دخول حاليًا.', ephemeral: true });
+      if (!reportLines.length) {
+        return interaction.editReply({ content: '📭 لا توجد أي جلسات خلال الفترة المحددة.' });
       }
 
-      return interaction.reply({ content: `📋 المسجلين دخول حاليًا:
+      const targetChannel = await interaction.guild.channels.fetch("1379000568680419338").catch(() => null);
+      if (targetChannel?.isTextBased()) {
+        await targetChannel.send({
+          content: `🗓️ تقرير الجرد من **${from}** إلى **${to}**:
 
-${activeUsers.join('\n')}`, ephemeral: true });
-    }
-  }
-
-  if (interaction.isStringSelectMenu() && interaction.customId.startsWith('select_place_')) {
-    const selected = interaction.values[0];
-    const userId = interaction.user.id;
-
-    if (selected === "ملكية + السجن اداري") {
-      await Session.findOneAndUpdate(
-        { userId },
-        { $push: { sessions: { start: new Date(), type: selected } }, username: interaction.user.username },
-        { upsert: true, new: true }
-      );
-      return interaction.update({ content: `✅ تم تسجيل الدخول في **${selected}** بنجاح.`, components: [] });
-    }
-
-    const approveBtn = new ButtonBuilder().setCustomId(`approve_${userId}_${selected}`).setLabel('قبول').setStyle(ButtonStyle.Success);
-    const rejectBtn = new ButtonBuilder().setCustomId(`reject_${userId}_${selected}`).setLabel('رفض').setStyle(ButtonStyle.Danger);
-    const row = new ActionRowBuilder().addComponents(approveBtn, rejectBtn);
-
-    const requestChannel = await interaction.guild.channels.fetch("1379000717230215179");
-    if (requestChannel?.isTextBased()) {
-      await requestChannel.send({
-        content: `🔔 طلب دخول جديد من <@${userId}> للموقع **${selected}**. الرجاء مراجعة الطلب في: <#1379000717230215179>`
-      });
-
-      const dmTarget = interaction.guild.members.cache.find(m => m.roles.cache.has("1379000098989801482"));
-      if (dmTarget) {
-        dmTarget.send({
-          content: `📥 طلب دخول جديد من <@${userId}> للموقع **${selected}**. الرجاء مراجعة الطلب في الروم <#1379000717230215179>.`
-        }).catch(() => {});
+${reportLines.join('\n')}`
+        });
       }
 
-      await requestChannel.send({
-        content: `• العضو: <@${userId}>\n• الموقع: **${selected}**`,
-        components: [row]
-      });
-    }
-
-    await interaction.update({ content: `📨 تم إرسال طلب الدخول، الرجاء انتظار القبول أو الرفض.`, components: [] });
-  }
-
-  if (interaction.isButton()) {
-    const [action, userId, type] = interaction.customId.split('_');
-    const targetUser = await interaction.guild.members.fetch(userId).catch(() => null);
-    if (!targetUser) return;
-
-    const logChannel = await interaction.guild.channels.fetch("1379000717230215179");
-    if (!logChannel?.isTextBased()) return;
-
-    await interaction.deferUpdate();
-
-    if (action === 'approve') {
-      await Session.findOneAndUpdate(
-        { userId },
-        { $push: { sessions: { start: new Date(), type } }, username: targetUser.user.username },
-        { upsert: true, new: true }
-      );
-
-      await interaction.message.edit({ content: `✅ تم قبول دخول <@${userId}> إلى **${type}**.`, components: [] });
-      //await logChannel.send(`☑️ تم قبول دخول <@${userId}> إلى **${type}**.`);
-
-    } else if (action === 'reject') {
-      await interaction.message.edit({ content: `❌ تم رفض دخول <@${userId}> إلى **${type}**.`, components: [] });
-      //await logChannel.send(`🚫 تم رفض دخول <@${userId}> إلى **${type}**. يرجى التواصل مع المشرف.`);
+      await interaction.editReply({ content: '✅ تم إرسال تقرير الجرد في القناة المخصصة.' });
     }
   }
 });
