@@ -56,7 +56,7 @@ client.once('ready', () => {
   const commands = [
     new SlashCommandBuilder()
       .setName('jard')
-      .setDescription(' احصل على جرد الحضور خلال فترة محددة')
+      .setDescription('📊 احصل على جرد الحضور خلال فترة محددة')
       .addStringOption(option => option.setName('من').setDescription('تاريخ البداية (YYYY-MM-DD)').setRequired(true))
       .addStringOption(option => option.setName('إلى').setDescription('تاريخ النهاية (YYYY-MM-DD)').setRequired(true)),
 
@@ -103,7 +103,7 @@ client.on('interactionCreate', async interaction => {
 
       const row = new ActionRowBuilder().addComponents(menu);
       await interaction.reply({
-        content: ' اختر المكان الذي تريد تسجيل الدخول إليه:',
+        content: '📍 اختر المكان الذي تريد تسجيل الدخول إليه:',
         components: [row],
         ephemeral: false
       });
@@ -164,7 +164,7 @@ ${activeUsers.join('\n')}`, ephemeral: true });
     const requestChannel = await interaction.guild.channels.fetch("1379000717230215179");
     if (requestChannel?.isTextBased()) {
       await requestChannel.send({
-        content: `🔔 طلب دخول جديد من <@${userId}> للموقع **${selected}**. الرجاء مراجعة الطلب في: <#1379000717230215179>`,
+        content: `🔔 طلب دخول جديد من <@${userId}> للموقع **${selected}**. الرجاء مراجعة الطلب في: <#1379000717230215179>`
       });
       await requestChannel.send({
         content: `• العضو: <@${userId}>\n• الموقع: **${selected}**`,
@@ -176,22 +176,32 @@ ${activeUsers.join('\n')}`, ephemeral: true });
   }
 
   if (interaction.isButton()) {
-    const [action, userId, type] = interaction.customId.split('_');
-    const targetUser = await interaction.guild.members.fetch(userId);
-    const logChannel = await interaction.guild.channels.fetch("1382950319039461456");
-    if (!logChannel?.isTextBased()) return;
+    try {
+      await interaction.deferUpdate();
 
-    if (action === 'approve') {
-      await Session.findOneAndUpdate(
-        { userId },
-        { $push: { sessions: { start: new Date(), type } }, username: targetUser.user.username },
-        { upsert: true, new: true }
-      );
-      await logChannel.send(`✅ تم قبول دخول <@${userId}> إلى **${type}**.`);
-      await interaction.update({ content: `☑️ تم القبول وتسجيل الدخول في **${type}**.`, components: [] });
-    } else if (action === 'reject') {
-      await logChannel.send(`❌ تم رفض دخول <@${userId}> إلى **${type}**. يرجى التواصل مع المشرف.`);
-      await interaction.update({ content: `❌ تم الرفض.`, components: [] });
+      const [action, userId, type] = interaction.customId.split('_');
+      const targetUser = await interaction.guild.members.fetch(userId).catch(() => null);
+      if (!targetUser) {
+        return interaction.followUp({ content: `❌ لا يمكن العثور على المستخدم.`, ephemeral: true });
+      }
+
+      const logChannel = await interaction.guild.channels.fetch("1382950319039461456");
+      if (!logChannel?.isTextBased()) return;
+
+      if (action === 'approve') {
+        await Session.findOneAndUpdate(
+          { userId },
+          { $push: { sessions: { start: new Date(), type } }, username: targetUser.user.username },
+          { upsert: true, new: true }
+        );
+        await logChannel.send(`✅ تم قبول دخول <@${userId}> إلى **${type}**.`);
+        await interaction.editReply({ content: `☑️ تم القبول وتسجيل الدخول في **${type}**.`, components: [] });
+      } else if (action === 'reject') {
+        await logChannel.send(`❌ تم رفض دخول <@${userId}> إلى **${type}**. يرجى التواصل مع المشرف.`);
+        await interaction.editReply({ content: `❌ تم الرفض.`, components: [] });
+      }
+    } catch (err) {
+      console.error("❌ خطأ في زر التفاعل:", err);
     }
   }
 });
