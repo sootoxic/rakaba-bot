@@ -108,4 +108,45 @@ client.on('interactionCreate', async interaction => {
       return interaction.reply({ content: `✅ تم تسجيل الخروج من **${type}**.`, ephemeral: true });
     }
   }
+
+  if (interaction.isStringSelectMenu()) {
+    const [_, __, userId] = interaction.customId.split('_');
+    if (interaction.user.id !== userId) return interaction.reply({ content: '❌ هذا التفاعل ليس لك.', ephemeral: true });
+
+    const selected = interaction.values[0];
+
+    if (selected === 'ملكية + السجن') {
+      let existing = await Session.findOne({ userId: interaction.user.id });
+      if (!existing) existing = new Session({ userId: interaction.user.id, username: interaction.user.username, sessions: [] });
+      existing.sessions.push({ start: new Date(), end: null, duration: null, type: selected });
+      await existing.save();
+      return interaction.update({ content: `✅ تم تسجيل الدخول إلى **${selected}**`, components: [] });
+    } else {
+      const accept = new ButtonBuilder().setCustomId(`accept_${interaction.user.id}_${selected}`).setLabel('✅ قبول').setStyle(ButtonStyle.Success);
+      const reject = new ButtonBuilder().setCustomId(`reject_${interaction.user.id}_${selected}`).setLabel('❌ رفض').setStyle(ButtonStyle.Danger);
+      const row = new ActionRowBuilder().addComponents(accept, reject);
+      const rakaba = await interaction.guild.members.fetch('1379000098989801482');
+      await rakaba.send({ content: `🕵️ طلب دخول من: <@${interaction.user.id}> إلى **${selected}**`, components: [row] });
+      return interaction.update({ content: '⏳ تم إرسال الطلب للمسؤول للموافقة عليه...', components: [] });
+    }
+  }
+
+  if (interaction.isButton()) {
+    const [action, userId, place] = interaction.customId.split('_');
+    const user = await interaction.guild.members.fetch(userId);
+    if (action === 'accept') {
+      let existing = await Session.findOne({ userId });
+      if (!existing) existing = new Session({ userId, username: user.user.username, sessions: [] });
+      existing.sessions.push({ start: new Date(), end: null, duration: null, type: place });
+      await existing.save();
+      await interaction.reply({ content: `✅ تم قبول دخول <@${userId}> إلى **${place}**` });
+      const logChannel = interaction.guild.channels.cache.get(interaction.channelId);
+      await logChannel.send(`✅ تم تسجيل دخول <@${userId}> إلى **${place}** بعد موافقة الرقابة.`);
+    } else if (action === 'reject') {
+      await interaction.reply({ content: `❌ تم رفض دخول <@${userId}> إلى **${place}**.` });
+      await user.send(`❌ تم رفض دخولك إلى **${place}**. يرجى مراجعة الرقابة.`);
+    }
+  }
 });
+
+client.login(process.env.BOT_TOKEN);
