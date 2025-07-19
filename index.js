@@ -160,7 +160,13 @@ client.on('interactionCreate', async interaction => {
       const reject = new ButtonBuilder().setCustomId(`reject_${interaction.user.id}_${selected}`).setLabel('❌ رفض').setStyle(ButtonStyle.Danger);
       const row = new ActionRowBuilder().addComponents(accept, reject);
       const rakaba = await interaction.guild.members.fetch('1379000098989801482');
-      await rakaba.send({ content: ` طلب دخول من: <@${interaction.user.id}> إلى **${selected}**`, components: [row] });
+try {
+  await rakaba.send({ content: `🕵️ طلب دخول من: <@${interaction.user.id}> إلى **${selected}**`, components: [row] });
+  await interaction.update({ content: '⏳ تم إرسال الطلب للمسؤول للموافقة عليه...', components: [] });
+} catch (err) {
+  console.error("❌ فشل إرسال DM للمسؤول:", err);
+  await interaction.update({ content: '⚠️ لم نتمكن من إرسال الطلب للمسؤول. تأكد من إمكانية استلامه للرسائل الخاصة.', components: [] });
+}
       return interaction.update({ content: ' تم إرسال الطلب للمسؤول للموافقة عليه...', components: [] });
     }
   }
