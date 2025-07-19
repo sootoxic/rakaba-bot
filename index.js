@@ -200,11 +200,11 @@ ${activeUsers.join('\n')}`, ephemeral: true });
       );
 
       await interaction.message.edit({ content: `✅ تم قبول دخول <@${userId}> إلى **${type}**.`, components: [] });
-      await logChannel.send(`☑️ تم قبول دخول <@${userId}> إلى **${type}**.`);
+      //await logChannel.send(`☑️ تم قبول دخول <@${userId}> إلى **${type}**.`);
 
     } else if (action === 'reject') {
       await interaction.message.edit({ content: `❌ تم رفض دخول <@${userId}> إلى **${type}**.`, components: [] });
-      await logChannel.send(`🚫 تم رفض دخول <@${userId}> إلى **${type}**. يرجى التواصل مع المشرف.`);
+      //await logChannel.send(`🚫 تم رفض دخول <@${userId}> إلى **${type}**. يرجى التواصل مع المشرف.`);
     }
   }
 });
