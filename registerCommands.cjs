@@ -20,22 +20,9 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('خروج')
-    .setDescription('🔴 تسجيل الخروج من الجلسة الحالية')
+    .setDescription('🔴 تسجيل الخروج من الجلسة الحالية'),
+
+  new SlashCommandBuilder()
+    .setName('عرض')
+    .setDescription('📋 عرض جميع المسجلين دخول حاليًا') // ✅ أضفنا هذا السطر
 ];
-
-// تجهيز الاتصال بـ Discord API
-const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
-
-// إرسال الأوامر إلى Discord
-(async () => {
-  try {
-    console.log('🚀 جاري تسجيل الأوامر...');
-    await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, '1111813578438221884'),
-      { body: commands }
-    );
-    console.log('✅ تم تسجيل جميع الأوامر بنجاح.');
-  } catch (error) {
-    console.error('❌ حدث خطأ أثناء التسجيل:', error);
-  }
-})();
